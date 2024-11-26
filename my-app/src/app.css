@@ -1,0 +1,42 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background:
+        radial-gradient(rgb(46, 34, 22), black),
+        url(https://grainy-gradients.vercel.app/noise.svg);
+}
+
+h1 {
+    font-size: 2rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+}
+
+h4 {
+    font-size: 1rem;
+}
+
+h5 {
+    font-size: 0.875rem;
+}
+
+h6 {
+    font-size: 0.75rem;
+}
+
+p {
+    font-size: 1rem;
+}
+
