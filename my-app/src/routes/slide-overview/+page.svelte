@@ -4,6 +4,7 @@
     import Squeeze from "$lib/squeeze.svelte";
     import SlideCard from "$lib/slide-card.svelte";
     import { Card } from "flowbite-svelte";
+    import Header from "$lib/header.svelte";
 
     const slides: SlideModel[] = [
         new SlideModel(
@@ -108,6 +109,7 @@
 </script>
 
 <Center>
+    <Header></Header>
     <Squeeze>
         <div class="grid grid-cols-3 gap-6 w-full p-12">
             {#each slides as slide}

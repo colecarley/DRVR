@@ -1,11 +1,13 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import Center from "$lib/center.svelte";
+    import Header from "$lib/header.svelte";
     import Squeeze from "$lib/squeeze.svelte";
     import { Button, Card, Input, Label } from "flowbite-svelte";
 </script>
 
 <Center>
+    <Header></Header>
     <Squeeze>
         <div class="flex flex-col h-full justify-center items-center">
             <Card class="shadow-lg shadow-primary-500">

@@ -1,13 +1,19 @@
 <script lang="ts">
-    import { BottomNav, BottomNavItem, Button } from "flowbite-svelte";
     import {
+        BottomNav,
+        BottomNavItem,
+        Button,
+        Input,
+        Modal,
+    } from "flowbite-svelte";
+    import {
+        MessagesOutline,
         PenOutline,
         PenSolid,
-        WandMagicSparklesOutline,
         ZoomInOutline,
         ZoomOutOutline,
     } from "flowbite-svelte-icons";
-    import { onDestroy, onMount } from "svelte";
+    import { onMount } from "svelte";
 
     let {
         imagePath,
@@ -15,60 +21,96 @@
         imagePath: string;
     } = $props();
 
-    let innerWidth = $state(0);
-    let outerWidth = $state(0);
-    let innerHeight = $state(0);
+    let modal = $state(false);
+    let note: string = $state("");
+    let notes: string[] = $state([]);
+
     let outerHeight = $state(0);
+    let outerWidth = $state(0);
 
     let zoomAmount = 1;
-    function resizeCanvas(zoomFactor: number) {
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let canvasRef: HTMLCanvasElement;
+    let ctxRef: CanvasRenderingContext2D;
+    let miniMapRef: HTMLCanvasElement;
+    let miniMapCtxRef: CanvasRenderingContext2D;
 
+    let leftPosition = 0;
+    let topPosition = 0;
+    function resizeCanvas(zoomFactor: number) {
         const img = new Image();
         img.src = imagePath;
         img.onload = () => {
             zoomAmount = zoomAmount * zoomFactor;
 
-            canvas.width = img.width * zoomAmount;
-            canvas.height = img.height * zoomAmount;
+            canvasRef.width = img.width * zoomAmount;
+            canvasRef.height = img.height * zoomAmount;
 
-            ctx.drawImage(
+            ctxRef.clearRect(0, 0, canvasRef.width, canvasRef.height);
+            ctxRef.drawImage(
                 img,
                 0,
                 0,
                 img.width * zoomAmount,
                 img.height * zoomAmount,
             );
-            ctx.fillStyle = "red";
+            ctxRef.fillStyle = "red";
 
             restoreDrawings();
         };
     }
 
-    onMount(() => {
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
+    function redrawMinimap() {
         const img = new Image();
         img.src = imagePath;
         img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            miniMapRef.width = img.width / 5;
+            miniMapRef.height = img.height / 5;
 
-            ctx.drawImage(img, 0, 0);
-            ctx.fillStyle = "red";
+            miniMapCtxRef.clearRect(0, 0, miniMapRef.width, miniMapRef.height);
+            miniMapCtxRef.drawImage(img, 0, 0, img.width / 5, img.height / 5);
+
+            miniMapCtxRef.strokeStyle = "red";
+
+            const canvasTop = topPosition;
+            const canvasBottom = topPosition + canvasRef.height;
+
+            const canvasLeft = leftPosition;
+            const canvasRight = leftPosition + canvasRef.width;
+
+            const isHeightInFrame = canvasTop < 0 && canvasBottom > outerHeight;
+            const isWidthInFrame = canvasLeft < 0 && canvasRight > outerWidth;
+
+            const viewHeight = isHeightInFrame
+                ? miniMapRef.height
+                : ((outerHeight - topPosition) / outerHeight) *
+                  miniMapRef.height;
+
+            const viewWidth = isWidthInFrame
+                ? miniMapRef.width
+                : ((outerWidth - leftPosition) / outerWidth) * miniMapRef.width;
+
+            miniMapCtxRef.strokeRect(0, 0, viewWidth, viewHeight);
         };
+    }
+
+    onMount(() => {
+        canvasRef = document.getElementById("canvas") as HTMLCanvasElement;
+        ctxRef = canvasRef.getContext("2d") as CanvasRenderingContext2D;
+
+        miniMapRef = document.getElementById("minimap") as HTMLCanvasElement;
+        miniMapCtxRef = miniMapRef.getContext("2d") as CanvasRenderingContext2D;
+        resizeCanvas(1);
+        redrawMinimap();
     });
 
     function zoomIn() {
-        console.log("zoom in");
-        resizeCanvas(2);
+        resizeCanvas(1.01);
+        redrawMinimap();
     }
 
     function zoomOut() {
-        console.log("zoom out");
-        resizeCanvas(0.5);
+        resizeCanvas(0.99);
+        redrawMinimap();
     }
 
     type Positions = {
@@ -81,17 +123,23 @@
         y: 0,
     };
 
+    const startPositions: Positions = {
+        x: 0,
+        y: 0,
+    };
+
     let penOn = $state(false);
-    let drawing = false;
+    let mouseDown = false;
 
     const drawings: {
         position: Positions;
+        leftPosition: number;
+        topPosition: number;
         height: number;
         width: number;
     }[] = [];
 
     function draw() {
-        console.log("drawing at", positions.x, positions.y);
         const canvas = document.getElementById("canvas") as HTMLCanvasElement;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
@@ -105,71 +153,119 @@
                 x: positions.x,
                 y: positions.y,
             },
+            leftPosition: leftPosition,
+            topPosition: topPosition,
             height: canvas.height,
             width: canvas.width,
         });
     }
 
-    function restoreDrawings() {
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    function move() {
+        canvasRef.style.left = `${(leftPosition += positions.x - startPositions.x)}px`;
+        canvasRef.style.top = `${(topPosition += positions.y - startPositions.y)}px`;
 
+        redrawMinimap();
+    }
+
+    function restoreDrawings() {
         drawings.forEach((drawing) => {
-            ctx.beginPath();
-            ctx.arc(
-                drawing.position.x * (canvas.width / drawing.width),
-                drawing.position.y * (canvas.height / drawing.height),
+            ctxRef.beginPath();
+            ctxRef.arc(
+                drawing.position.x * (canvasRef.width / drawing.width),
+                drawing.position.y * (canvasRef.height / drawing.height),
                 5 * zoomAmount,
                 0,
                 2 * Math.PI,
             );
-            ctx.fill();
-            ctx.closePath();
+            ctxRef.fill();
+            ctxRef.closePath();
         });
     }
+
+    let intervalId: number;
 </script>
 
-<svelte:window
-    bind:innerWidth
-    bind:outerWidth
-    bind:innerHeight
-    bind:outerHeight
-/>
+<svelte:window bind:outerHeight bind:outerWidth />
+
+<Modal title="Notes" bind:open={modal}>
+    <div class="p-6">
+        <ul class="list-disc">
+            {#each notes as note}
+                <li class="w-full">{note}</li>
+            {/each}
+        </ul>
+    </div>
+    <svelte:fragment slot="footer">
+        <Input type="text" bind:value={note} />
+        <Button
+            onclick={() => {
+                notes.push(note);
+            }}>Add</Button
+        >
+    </svelte:fragment>
+</Modal>
+
+<div class="z-50 bg-white absolute">
+    <canvas id="minimap"></canvas>
+</div>
 
 <div class="overflow-auto h-full w-full">
-    <div class="flex justify-center items-center h-full">
-        <canvas
-            id="canvas"
-            class="cursor-crosshair active:cursor-pointer absolute"
-            onmousemove={(e) => {
-                positions.x = e.offsetX;
-                positions.y = e.offsetY;
+    <canvas
+        id="canvas"
+        class="cursor-crosshair active:cursor-pointer absolute"
+        onmousemove={(e) => {
+            positions.x = e.offsetX;
+            positions.y = e.offsetY;
 
-                if (drawing && penOn) {
-                    draw();
+            if (mouseDown) {
+                if (penOn) {
+                    requestAnimationFrame(draw);
+                } else {
+                    requestAnimationFrame(move);
                 }
-            }}
-            onmousedown={() => {
-                console.log("moiuse down");
-                drawing = true;
-            }}
-            onmouseup={() => {
-                console.log("moise up");
-                drawing = false;
-            }}
-        ></canvas>
-    </div>
+            }
+        }}
+        onmousedown={() => {
+            mouseDown = true;
+            startPositions.x = positions.x;
+            startPositions.y = positions.y;
+        }}
+        onmouseup={() => {
+            mouseDown = false;
+        }}
+        onmouseleave={() => {
+            mouseDown = false;
+        }}
+    ></canvas>
 </div>
+
 <BottomNav
-    classInner="grid grid-cols-3 bg-white bg-opacity-70"
+    classInner="grid grid-cols-4 bg-white bg-opacity-70"
     activeUrl="/"
     id="bottom-nav"
     classOuter="bg-transparent border-none"
 >
-    <BottomNavItem onclick={zoomIn}>
+    <BottomNavItem
+        onmousedown={() => {
+            intervalId = setInterval(zoomIn, 10);
+        }}
+        onmouseup={() => {
+            clearInterval(intervalId);
+        }}
+        onmouseleave={() => {
+            clearInterval(intervalId);
+        }}
+    >
         <ZoomInOutline class="w-6 h-6 text-primary-900 " />
     </BottomNavItem>
-    <BottomNavItem onclick={zoomOut}>
+    <BottomNavItem
+        onmousedown={() => {
+            intervalId = setInterval(zoomOut, 10);
+        }}
+        onmouseup={() => {
+            clearInterval(intervalId);
+        }}
+    >
         <ZoomOutOutline class="w-6 h-6 text-primary-900 " />
     </BottomNavItem>
     <BottomNavItem
@@ -182,5 +278,12 @@
         {:else}
             <PenOutline class="w-6 h-6 text-primary-900" />
         {/if}
+    </BottomNavItem>
+    <BottomNavItem
+        onclick={() => {
+            modal = true;
+        }}
+    >
+        <MessagesOutline></MessagesOutline>
     </BottomNavItem>
 </BottomNav>

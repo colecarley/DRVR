@@ -1,11 +1,11 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import CaseCard from "$lib/case-card.svelte";
     import Center from "$lib/center.svelte";
+    import Header from "$lib/header.svelte";
     import Squeeze from "$lib/squeeze.svelte";
-    import { BottomNav, BottomNavItem, Button } from "flowbite-svelte";
-    import { CaseModel, type Case } from "../../types/case";
-    import { PlusOutline } from "flowbite-svelte-icons";
-    import { goto } from "$app/navigation";
+    import { Button } from "flowbite-svelte";
+    import { CaseModel } from "../../types/case";
 
     const cases: CaseModel[] = [
         new CaseModel("Case 1", "slide-overview", "2021-01-01"),
@@ -15,6 +15,7 @@
 </script>
 
 <Center>
+    <Header></Header>
     <Squeeze>
         <div class="p-12">
             <div class="w-full justify-between flex">
