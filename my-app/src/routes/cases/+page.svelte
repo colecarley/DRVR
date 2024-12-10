@@ -6,6 +6,7 @@
     import Squeeze from "$lib/squeeze.svelte";
     import { Button } from "flowbite-svelte";
     import { CaseModel } from "../../types/case";
+    import { PlusOutline } from "flowbite-svelte-icons";
 
     const cases: CaseModel[] = [
         new CaseModel("Case 1", "slide-overview", "2021-01-01"),
@@ -21,11 +22,13 @@
             <div class="w-full justify-between flex">
                 <h1 class="text-primary-50">Cases</h1>
                 <Button
-                    class="mb-12"
+                    class="mb-12 flex justify-between gap-2"
                     onclick={() => {
                         goto("/upload-case");
-                    }}>Add Case</Button
-                >
+                    }}
+                    >Add Case
+                    <PlusOutline class="w-6 h-6" />
+                </Button>
             </div>
             <div class="grid grid-cols-2 w-full gap-6">
                 {#each cases as c}

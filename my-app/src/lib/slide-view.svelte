@@ -3,13 +3,15 @@
         BottomNav,
         BottomNavItem,
         Button,
-        Input,
         Modal,
+        Textarea,
     } from "flowbite-svelte";
     import {
         MessagesOutline,
         PenOutline,
         PenSolid,
+        RedoOutline,
+        UndoOutline,
         ZoomInOutline,
         ZoomOutOutline,
     } from "flowbite-svelte-icons";
@@ -23,7 +25,6 @@
 
     let modal = $state(false);
     let note: string = $state("");
-    let notes: string[] = $state([]);
 
     let outerHeight = $state(0);
     let outerWidth = $state(0);
@@ -131,13 +132,16 @@
     let penOn = $state(false);
     let mouseDown = false;
 
-    const drawings: {
+    type Drawing = {
         position: Positions;
         leftPosition: number;
         topPosition: number;
         height: number;
         width: number;
-    }[] = [];
+    };
+
+    const drawings: Drawing[] = [];
+    const undos: Drawing[] = [];
 
     function draw() {
         const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -188,20 +192,15 @@
 <svelte:window bind:outerHeight bind:outerWidth />
 
 <Modal title="Notes" bind:open={modal}>
-    <div class="p-6">
-        <ul class="list-disc">
-            {#each notes as note}
-                <li class="w-full">{note}</li>
-            {/each}
-        </ul>
-    </div>
+    <Textarea bind:value={note} cols={10}></Textarea>
     <svelte:fragment slot="footer">
-        <Input type="text" bind:value={note} />
-        <Button
-            onclick={() => {
-                notes.push(note);
-            }}>Add</Button
-        >
+        <div class="w-full flex justify-end">
+            <Button
+                onclick={() => {
+                    modal = false;
+                }}>Save</Button
+            >
+        </div>
     </svelte:fragment>
 </Modal>
 
@@ -240,7 +239,7 @@
 </div>
 
 <BottomNav
-    classInner="grid grid-cols-4 bg-white bg-opacity-70"
+    classInner="grid grid-cols-6 bg-white bg-opacity-70"
     activeUrl="/"
     id="bottom-nav"
     classOuter="bg-transparent border-none"
@@ -280,10 +279,51 @@
         {/if}
     </BottomNavItem>
     <BottomNavItem
+        onmousedown={() => {
+            intervalId = setInterval(() => {
+                const drawing = drawings.pop();
+                if (!drawing) {
+                    return;
+                }
+                undos.push(drawing);
+                resizeCanvas(zoomAmount);
+            }, 10);
+        }}
+        onmouseup={() => {
+            clearInterval(intervalId);
+        }}
+        onmouseleave={() => {
+            clearInterval(intervalId);
+        }}
+    >
+        <UndoOutline class="w-6 h-6 text-primary-900" />
+    </BottomNavItem>
+    <BottomNavItem
+        onmousedown={() => {
+            intervalId = setInterval(() => {
+                const drawing = undos.pop();
+                if (!drawing) {
+                    return;
+                }
+                drawings.push(drawing);
+                resizeCanvas(zoomAmount);
+            }, 10);
+        }}
+        onmouseup={() => {
+            clearInterval(intervalId);
+        }}
+        onmouseleave={() => {
+            clearInterval(intervalId);
+        }}
+    >
+        <RedoOutline class="w-6 h-6 text-primary-900" />
+    </BottomNavItem>
+
+    <BottomNavItem
         onclick={() => {
             modal = true;
         }}
     >
-        <MessagesOutline></MessagesOutline>
+        <MessagesOutline class="w-6 h-6 text-primary-900"></MessagesOutline>
     </BottomNavItem>
 </BottomNav>
