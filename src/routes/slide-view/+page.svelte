@@ -1,3 +1,7 @@
+<!-- 
+    This is the slide view page. It displays a grid of slides with an image and a close button.
+    It also handles the keyboard shortcuts for adding a new slide view.
+  -->
 <script lang="ts">
     import { goto } from "$app/navigation";
     import Overview from "$lib/overview.svelte";
@@ -6,9 +10,12 @@
     import { CloseOutline } from "flowbite-svelte-icons";
     import { onMount } from "svelte";
 
+    // state to control the new slide modal
     let newSlide: boolean = $state(false);
     let imagePaths: string[] = $state([]);
 
+    // this hook runs when the component is mounted
+    // it loads the image paths from local storage
     onMount(() => {
         const paths = localStorage.getItem("imagePaths");
         if (paths) {

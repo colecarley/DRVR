@@ -1,3 +1,9 @@
+<!-- 
+    This is the header component that will be used in all the pages.
+    It will show the brand name and the navigation links based on the current page.
+    If the user is logged in, it will show the Home, Cases, and Logout links.
+    If the user is not logged in, it will show the Login and Sign up links.
+  -->
 <script>
     import { page } from "$app/stores";
     import {
@@ -9,6 +15,7 @@
     } from "flowbite-svelte";
     import { onDestroy } from "svelte";
 
+    // check if the user is inside the app
     let inside = $state(false);
     const sub = page.subscribe((value) => {
         inside =

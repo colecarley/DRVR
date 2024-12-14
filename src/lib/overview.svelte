@@ -1,14 +1,20 @@
+<!-- 
+    This is the overview component that displays all the slides in a grid.
+    It uses the SlideCard component to display each slide.
+    The number of columns in the grid can be set using the cols prop.
+  -->
+
 <script lang="ts">
     import { SlideModel } from "../types/slide";
     import SlideCard from "./slide-card.svelte";
 
-    // export let cols = $state(3);
-    // export let slideId = $state(null);
+    // the props for the component
     let {
         cols = $bindable(3),
         onchoose,
     }: { cols: number; onchoose: (slide: SlideModel) => void } = $props();
 
+    // the list of slides to display
     const slides: SlideModel[] = [
         new SlideModel(
             "/slide-1.jpg",

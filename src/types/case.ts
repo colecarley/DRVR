@@ -1,4 +1,6 @@
-
+/*
+    This file contains the interface for the Case object.
+*/
 export interface Case {
     name: string;
     href: string;

@@ -1,3 +1,7 @@
+<!-- 
+    This is the signup page. It contains a form with fields for email, username, first name, last name, password, and repeat password.
+    The form is styled using the flowbite-svelte library.
+  -->
 <script lang="ts">
     import { goto } from "$app/navigation";
     import Center from "$lib/center.svelte";

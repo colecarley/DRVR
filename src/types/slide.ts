@@ -1,3 +1,6 @@
+/*
+ This file contains the interface for the Slide object.
+ */
 
 export interface Slide {
     image: string;
@@ -21,5 +24,4 @@ export class SlideModel implements Slide {
         this.date = date;
         this.description = description;
     }
-
 }

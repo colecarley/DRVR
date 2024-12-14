@@ -1,3 +1,7 @@
+<!-- 
+    This is the main component that is used to view the slides. It is responsible for displaying the slides and the notes. 
+    It also allows the user to draw on the slides, save notes, zoom in and out, and undo and redo the drawings.
+  -->
 <script lang="ts">
     import { Button, Modal, Textarea } from "flowbite-svelte";
     import {
@@ -9,13 +13,30 @@
         ZoomInOutline,
         ZoomOutOutline,
     } from "flowbite-svelte-icons";
-
+    // the props for the component
     let {
         imagePath,
     }: {
         imagePath: string;
     } = $props();
 
+    // the types for the componentA
+    type Positions = {
+        x: number;
+        y: number;
+    };
+
+    type Marking = {
+        position: Positions;
+        leftPosition: number;
+        topPosition: number;
+        height: number;
+        width: number;
+    };
+
+    type Drawing = Marking[];
+
+    // the state for the component
     $effect(() => {
         if (imagePath) {
             redrawMinimap();
@@ -23,20 +44,33 @@
         }
     });
 
+    $effect(() => {
+        penOn;
+        if (drawing.length == 0) return;
+
+        drawings.push(drawing);
+        drawing = [];
+    });
+
     let modal = $state(false);
     let note: string = $state("");
-
     let outerHeight = $state(0);
     let outerWidth = $state(0);
+    let penOn = $state(false);
+    let mouseDown = $state(false);
 
+    // the variables for the component
     let zoomAmount = 1;
     let canvasRef: HTMLCanvasElement;
     let ctxRef: CanvasRenderingContext2D;
     let miniMapRef: HTMLCanvasElement;
     let miniMapCtxRef: CanvasRenderingContext2D;
-
     let leftPosition = 0;
     let topPosition = 0;
+    let windowActive = false;
+    let intervalId: number;
+
+    // this function resizes the canvas based on the zoom factor
     function resizeCanvas(zoomFactor: number) {
         const img = new Image();
         img.src = imagePath;
@@ -60,6 +94,7 @@
         };
     }
 
+    // this function redraws the minimap
     function redrawMinimap() {
         const img = new Image();
         img.src = imagePath;
@@ -104,11 +139,6 @@
         redrawMinimap();
     }
 
-    type Positions = {
-        x: number;
-        y: number;
-    };
-
     const positions: Positions = {
         x: 0,
         y: 0,
@@ -119,31 +149,15 @@
         y: 0,
     };
 
-    let penOn = $state(false);
-    let mouseDown = $state(false);
-
-    $effect(() => {
-        penOn;
-        if (drawing.length == 0) return;
-
-        drawings.push(drawing);
-        drawing = [];
-    });
-
-    type Marking = {
-        position: Positions;
-        leftPosition: number;
-        topPosition: number;
-        height: number;
-        width: number;
-    };
-
-    type Drawing = Marking[];
-
     const drawings: Drawing[] = [];
+
+    // used to store the drawings that have been undone
     const undos: Drawing[] = [];
 
+    // this is an accumulator for the drawings
     let drawing: Drawing = [];
+
+    // this function draws a point on the canvas
     function draw() {
         ctxRef.beginPath();
         ctxRef.arc(positions.x, positions.y, 5 * zoomAmount, 0, 2 * Math.PI);
@@ -206,8 +220,7 @@
         resizeCanvas(1);
     }
 
-    let intervalId: number;
-
+    // this function loads the minimap
     function loadMinimap(canvas: HTMLCanvasElement) {
         miniMapRef = canvas as HTMLCanvasElement;
         const context = canvas.getContext("2d");
@@ -219,6 +232,7 @@
         redrawMinimap();
     }
 
+    // this function loads the canvas
     function loadCanvas(canvas: HTMLCanvasElement) {
         canvasRef = canvas as HTMLCanvasElement;
         const context = canvas.getContext("2d");
@@ -230,15 +244,12 @@
         resizeCanvas(1);
     }
 
+    // used to check if certain keys are pressed
     let meta = false;
     let shift = false;
-    let windowActive = false;
-</script>
 
-<svelte:window
-    bind:outerHeight
-    bind:outerWidth
-    onkeydown={(e) => {
+    // used to check if redo or undo should be called or if the pen is on
+    function handleKeydown(e: KeyboardEvent) {
         if (e.key == "Meta") {
             meta = true;
         } else if (e.key == "Shift") {
@@ -253,8 +264,10 @@
         if (e.code == "Space") {
             penOn = true;
         }
-    }}
-    onkeyup={(e) => {
+    }
+
+    // used to check if certain keys are released
+    function handleKeyup(e: KeyboardEvent) {
         if (e.key == "Meta") {
             meta = false;
         }
@@ -264,7 +277,14 @@
         if (e.code == "Space") {
             penOn = false;
         }
-    }}
+    }
+</script>
+
+<svelte:window
+    bind:outerHeight
+    bind:outerWidth
+    onkeydown={handleKeydown}
+    onkeyup={handleKeyup}
 />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->

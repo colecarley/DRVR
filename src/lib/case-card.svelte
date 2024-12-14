@@ -1,3 +1,7 @@
+<!-- 
+    This is a simple card component that displays a case name and date.
+    It uses the Card component from Flowbite and the FolderOutline icon from Flowbite Icons.
+-->
 <script lang="ts">
     import { Card } from "flowbite-svelte";
     import { FolderOutline } from "flowbite-svelte-icons";

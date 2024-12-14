@@ -1,3 +1,7 @@
+<!-- 
+    This is the login page. It is a simple form with a username and password input field.
+    The login button is a simple button that redirects to the cases page.
+  -->
 <script lang="ts">
     import { goto } from "$app/navigation";
     import Center from "$lib/center.svelte";

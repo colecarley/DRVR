@@ -1,3 +1,7 @@
+<!-- 
+    This file is a part of the Slide Overview page.
+    It displays all the slides in a grid.
+  -->
 <script lang="ts">
     import { goto } from "$app/navigation";
     import Center from "$lib/center.svelte";
@@ -5,6 +9,7 @@
     import Overview from "$lib/overview.svelte";
     import { Label, Range } from "flowbite-svelte";
 
+    // state to control the number of columns in the grid
     let cols = $state(3);
 </script>
 

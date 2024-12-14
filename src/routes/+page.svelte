@@ -1,3 +1,7 @@
+<!-- 
+    This file is the home page of the Dr. VR platform.
+    It is a simple landing page with a welcome message and two sections for new users and returning users.
+  -->
 <script>
     import { goto } from "$app/navigation";
     import Center from "$lib/center.svelte";
