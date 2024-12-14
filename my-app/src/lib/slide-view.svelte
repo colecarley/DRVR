@@ -187,7 +187,7 @@
     }
 
     function undo() {
-        console.log("undoing");
+        if (!windowActive) return;
         const drawing = drawings.pop();
         if (!drawing) {
             return;
@@ -197,6 +197,7 @@
     }
 
     function redo() {
+        if (!windowActive) return;
         const drawing = undos.pop();
         if (!drawing) {
             return;
@@ -231,6 +232,7 @@
 
     let meta = false;
     let shift = false;
+    let windowActive = false;
 </script>
 
 <svelte:window
@@ -264,8 +266,16 @@
         }
     }}
 />
+
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
     class="overflow-hidden w-full h-full"
+    onmouseenter={() => {
+        windowActive = true;
+    }}
+    onmouseleave={() => {
+        windowActive = false;
+    }}
     onwheel={(e) => {
         e.deltaY > 0
             ? requestAnimationFrame(() => resizeCanvas(0.95))
