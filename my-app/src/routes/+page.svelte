@@ -17,10 +17,9 @@
             <div class="grid grid-cols-2 gap-12">
                 <div class="w-full h-full flex items-end justify-end">
                     <div class="w-3/4 h-fit">
-                        <p class="text-primary-200 text-3xl">
-                            Dr. VR is a virtual reality platform for medical
-                            professionals to view, annotate, and share
-                            microscopic images.
+                        <p class="text-primary-200 text-xl">
+                            Dr. VR is a platform for medical professionals to
+                            view, annotate, and share microscopic images.
                         </p>
                         <Card class="mt-12 max-w-full">
                             <div class="mb-6">
@@ -51,7 +50,7 @@
                 />
                 <div class="w-full h-full">
                     <div class="w-3/4 h-3/4">
-                        <p class="text-primary-200 text-3xl">
+                        <p class="text-primary-200 text-xl">
                             DR. VR reimagines the way medical professionals
                             interact with microscopic images. Our platform
                             provides a seamless experience for viewing,

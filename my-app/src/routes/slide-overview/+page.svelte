@@ -3,7 +3,6 @@
     import Center from "$lib/center.svelte";
     import Header from "$lib/header.svelte";
     import Overview from "$lib/overview.svelte";
-    import Squeeze from "$lib/squeeze.svelte";
     import { Label, Range } from "flowbite-svelte";
 
     let cols = $state(3);
@@ -11,31 +10,25 @@
 
 <Center>
     <Header></Header>
-    <Squeeze>
-        <div class="w-fit px-12 p-4 self-end">
-            <Label class="text-white">{cols} Columns</Label>
-            <Range
-                bind:value={cols}
-                min="3"
-                max="8"
-                onchange={() => {
-                    const container =
-                        document.getElementById("slide-container");
-                    if (container) {
-                        container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                    }
-                }}
-            />
-        </div>
-        <Overview
-            bind:cols
-            onchoose={(slide) => {
-                localStorage.setItem(
-                    "imagePaths",
-                    JSON.stringify([slide.image]),
-                );
-                goto("/slide-view/");
+    <div class="w-fit px-12 p-4 self-end">
+        <Label class="text-white">{cols} Columns</Label>
+        <Range
+            bind:value={cols}
+            min="3"
+            max="8"
+            onchange={() => {
+                const container = document.getElementById("slide-container");
+                if (container) {
+                    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                }
             }}
         />
-    </Squeeze>
+    </div>
+    <Overview
+        bind:cols
+        onchoose={(slide) => {
+            localStorage.setItem("imagePaths", JSON.stringify([slide.image]));
+            goto("/slide-view/");
+        }}
+    />
 </Center>

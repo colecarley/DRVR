@@ -120,9 +120,17 @@
     };
 
     let penOn = $state(false);
-    let mouseDown = false;
+    let mouseDown = $state(false);
 
-    type Drawing = {
+    $effect(() => {
+        penOn;
+        if (drawing.length == 0) return;
+
+        drawings.push(drawing);
+        drawing = [];
+    });
+
+    type Marking = {
         position: Positions;
         leftPosition: number;
         topPosition: number;
@@ -130,16 +138,19 @@
         width: number;
     };
 
+    type Drawing = Marking[];
+
     const drawings: Drawing[] = [];
     const undos: Drawing[] = [];
 
+    let drawing: Drawing = [];
     function draw() {
         ctxRef.beginPath();
         ctxRef.arc(positions.x, positions.y, 5 * zoomAmount, 0, 2 * Math.PI);
         ctxRef.fill();
         ctxRef.closePath();
 
-        drawings.push({
+        drawing.push({
             position: {
                 x: positions.x,
                 y: positions.y,
@@ -159,18 +170,39 @@
     }
 
     function restoreDrawings() {
-        drawings.forEach((drawing) => {
-            ctxRef.beginPath();
-            ctxRef.arc(
-                drawing.position.x * (canvasRef.width / drawing.width),
-                drawing.position.y * (canvasRef.height / drawing.height),
-                5 * zoomAmount,
-                0,
-                2 * Math.PI,
-            );
-            ctxRef.fill();
-            ctxRef.closePath();
-        });
+        drawings.forEach((drawing) =>
+            drawing.forEach((marking) => {
+                ctxRef.beginPath();
+                ctxRef.arc(
+                    marking.position.x * (canvasRef.width / marking.width),
+                    marking.position.y * (canvasRef.height / marking.height),
+                    5 * zoomAmount,
+                    0,
+                    2 * Math.PI,
+                );
+                ctxRef.fill();
+                ctxRef.closePath();
+            }),
+        );
+    }
+
+    function undo() {
+        console.log("undoing");
+        const drawing = drawings.pop();
+        if (!drawing) {
+            return;
+        }
+        undos.push(drawing);
+        resizeCanvas(1);
+    }
+
+    function redo() {
+        const drawing = undos.pop();
+        if (!drawing) {
+            return;
+        }
+        drawings.push(drawing);
+        resizeCanvas(1);
     }
 
     let intervalId: number;
@@ -196,10 +228,50 @@
         ctxRef = context;
         resizeCanvas(1);
     }
+
+    let meta = false;
+    let shift = false;
 </script>
 
-<svelte:window bind:outerHeight bind:outerWidth />
-<div class="overflow-hidden w-full h-full">
+<svelte:window
+    bind:outerHeight
+    bind:outerWidth
+    onkeydown={(e) => {
+        if (e.key == "Meta") {
+            meta = true;
+        } else if (e.key == "Shift") {
+            shift = true;
+        } else if (e.key == "z" && meta) {
+            if (shift) {
+                redo();
+            } else {
+                undo();
+            }
+        }
+        if (e.code == "Space") {
+            penOn = true;
+        }
+    }}
+    onkeyup={(e) => {
+        if (e.key == "Meta") {
+            meta = false;
+        }
+        if (e.key == "Shift") {
+            shift = false;
+        }
+        if (e.code == "Space") {
+            penOn = false;
+        }
+    }}
+/>
+<div
+    class="overflow-hidden w-full h-full"
+    onwheel={(e) => {
+        e.deltaY > 0
+            ? requestAnimationFrame(() => resizeCanvas(0.95))
+            : requestAnimationFrame(() => resizeCanvas(1.05));
+    }}
+>
     <div class="relative">
         <Modal title="Notes" bind:open={modal}>
             <Textarea bind:value={note} cols={10}></Textarea>
@@ -228,7 +300,7 @@
 
                     if (mouseDown) {
                         if (penOn) {
-                            requestAnimationFrame(draw);
+                            draw();
                         } else {
                             requestAnimationFrame(move);
                         }
@@ -240,6 +312,11 @@
                     startPositions.y = positions.y;
                 }}
                 onmouseup={() => {
+                    if (penOn) {
+                        drawings.push(drawing);
+                        drawing = [];
+                    }
+
                     mouseDown = false;
                 }}
                 onmouseleave={() => {
@@ -292,43 +369,13 @@
             </Button>
             <Button
                 class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
-                onmousedown={() => {
-                    intervalId = setInterval(() => {
-                        const drawing = drawings.pop();
-                        if (!drawing) {
-                            return;
-                        }
-                        undos.push(drawing);
-                        resizeCanvas(1);
-                    }, 10);
-                }}
-                onmouseup={() => {
-                    clearInterval(intervalId);
-                }}
-                onmouseleave={() => {
-                    clearInterval(intervalId);
-                }}
+                onmousedown={undo}
             >
                 <UndoOutline class="w-6 h-6 text-primary-400" />
             </Button>
             <Button
                 class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
-                onmousedown={() => {
-                    intervalId = setInterval(() => {
-                        const drawing = undos.pop();
-                        if (!drawing) {
-                            return;
-                        }
-                        drawings.push(drawing);
-                        resizeCanvas(1);
-                    }, 10);
-                }}
-                onmouseup={() => {
-                    clearInterval(intervalId);
-                }}
-                onmouseleave={() => {
-                    clearInterval(intervalId);
-                }}
+                onmousedown={redo}
             >
                 <RedoOutline class="w-6 h-6 text-primary-400" />
             </Button>

@@ -4,7 +4,7 @@
     import Center from "$lib/center.svelte";
     import Header from "$lib/header.svelte";
     import Squeeze from "$lib/squeeze.svelte";
-    import { Button } from "flowbite-svelte";
+    import { Button, Card, Fileupload, Modal } from "flowbite-svelte";
     import { CaseModel } from "../../types/case";
     import { PlusOutline } from "flowbite-svelte-icons";
 
@@ -13,6 +13,8 @@
         new CaseModel("Case 2", "slide-overview", "2021-01-02"),
         new CaseModel("Case 3", "slide-overview", "2021-01-03"),
     ];
+
+    let showAddCase = $state(false);
 </script>
 
 <Center>
@@ -24,7 +26,7 @@
                 <Button
                     class="mb-12 flex justify-between gap-2"
                     onclick={() => {
-                        goto("/upload-case");
+                        showAddCase = true;
                     }}
                     >Add Case
                     <PlusOutline class="w-6 h-6" />
@@ -38,3 +40,14 @@
         </div>
     </Squeeze>
 </Center>
+
+<Modal bind:open={showAddCase} title="Upload Case" autoclose>
+    <div class="flex flex-col gap-6">
+        <Fileupload />
+
+        <div class="flex justify-end gap-3">
+            <Button>Cancel</Button>
+            <Button>Upload</Button>
+        </div>
+    </div>
+</Modal>

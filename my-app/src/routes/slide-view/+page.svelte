@@ -26,7 +26,6 @@
 
 <svelte:window
     onkeydown={(e) => {
-        e.stopPropagation();
         if (e.key == "Meta") {
             Meta = true;
         } else if (e.key == "\\" && Meta) {
@@ -34,7 +33,6 @@
         }
     }}
     onkeyup={(e) => {
-        e.stopPropagation();
         if (e.key == "Meta") {
             Meta = false;
         }
