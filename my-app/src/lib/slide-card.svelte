@@ -9,7 +9,7 @@
     } = $props();
 </script>
 
-<Card href={slide.href} img={slide.image} class="shadow-lg shadow-primary-500">
+<Card img={slide.image} class="shadow-lg shadow-primary-500 max-w-full">
     <p>{slide.title}</p>
     <p class="text-sm">{slide.date}</p>
     <p>{slide.description}</p>

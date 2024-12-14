@@ -1,11 +1,5 @@
 <script lang="ts">
-    import {
-        BottomNav,
-        BottomNavItem,
-        Button,
-        Modal,
-        Textarea,
-    } from "flowbite-svelte";
+    import { Button, Modal, Textarea } from "flowbite-svelte";
     import {
         MessagesOutline,
         PenOutline,
@@ -15,13 +9,19 @@
         ZoomInOutline,
         ZoomOutOutline,
     } from "flowbite-svelte-icons";
-    import { onMount } from "svelte";
 
     let {
         imagePath,
     }: {
         imagePath: string;
     } = $props();
+
+    $effect(() => {
+        if (imagePath) {
+            redrawMinimap();
+            resizeCanvas(1);
+        }
+    });
 
     let modal = $state(false);
     let note: string = $state("");
@@ -94,16 +94,6 @@
         };
     }
 
-    onMount(() => {
-        canvasRef = document.getElementById("canvas") as HTMLCanvasElement;
-        ctxRef = canvasRef.getContext("2d") as CanvasRenderingContext2D;
-
-        miniMapRef = document.getElementById("minimap") as HTMLCanvasElement;
-        miniMapCtxRef = miniMapRef.getContext("2d") as CanvasRenderingContext2D;
-        resizeCanvas(1);
-        redrawMinimap();
-    });
-
     function zoomIn() {
         resizeCanvas(1.01);
         redrawMinimap();
@@ -144,13 +134,10 @@
     const undos: Drawing[] = [];
 
     function draw() {
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
-        ctx.beginPath();
-        ctx.arc(positions.x, positions.y, 5 * zoomAmount, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.closePath();
+        ctxRef.beginPath();
+        ctxRef.arc(positions.x, positions.y, 5 * zoomAmount, 0, 2 * Math.PI);
+        ctxRef.fill();
+        ctxRef.closePath();
 
         drawings.push({
             position: {
@@ -159,8 +146,8 @@
             },
             leftPosition: leftPosition,
             topPosition: topPosition,
-            height: canvas.height,
-            width: canvas.width,
+            height: canvasRef.height,
+            width: canvasRef.width,
         });
     }
 
@@ -187,143 +174,173 @@
     }
 
     let intervalId: number;
+
+    function loadMinimap(canvas: HTMLCanvasElement) {
+        miniMapRef = canvas as HTMLCanvasElement;
+        const context = canvas.getContext("2d");
+        if (!context) {
+            return;
+        }
+
+        miniMapCtxRef = context;
+        redrawMinimap();
+    }
+
+    function loadCanvas(canvas: HTMLCanvasElement) {
+        canvasRef = canvas as HTMLCanvasElement;
+        const context = canvas.getContext("2d");
+        if (!context) {
+            return;
+        }
+
+        ctxRef = context;
+        resizeCanvas(1);
+    }
 </script>
 
 <svelte:window bind:outerHeight bind:outerWidth />
+<div class="overflow-hidden w-full h-full">
+    <div class="relative">
+        <Modal title="Notes" bind:open={modal}>
+            <Textarea bind:value={note} cols={10}></Textarea>
+            <svelte:fragment slot="footer">
+                <div class="w-full flex justify-end">
+                    <Button
+                        onclick={() => {
+                            modal = false;
+                        }}>Save</Button
+                    >
+                </div>
+            </svelte:fragment>
+        </Modal>
 
-<Modal title="Notes" bind:open={modal}>
-    <Textarea bind:value={note} cols={10}></Textarea>
-    <svelte:fragment slot="footer">
-        <div class="w-full flex justify-end">
-            <Button
-                onclick={() => {
-                    modal = false;
-                }}>Save</Button
-            >
+        <div class="bg-white absolute z-10">
+            <canvas use:loadMinimap></canvas>
         </div>
-    </svelte:fragment>
-</Modal>
 
-<div class="z-50 bg-white absolute">
-    <canvas id="minimap"></canvas>
+        <div class="overflow-auto h-full w-full">
+            <canvas
+                use:loadCanvas
+                class="cursor-crosshair active:cursor-pointer absolute"
+                onmousemove={(e) => {
+                    positions.x = e.offsetX;
+                    positions.y = e.offsetY;
+
+                    if (mouseDown) {
+                        if (penOn) {
+                            requestAnimationFrame(draw);
+                        } else {
+                            requestAnimationFrame(move);
+                        }
+                    }
+                }}
+                onmousedown={() => {
+                    mouseDown = true;
+                    startPositions.x = positions.x;
+                    startPositions.y = positions.y;
+                }}
+                onmouseup={() => {
+                    mouseDown = false;
+                }}
+                onmouseleave={() => {
+                    mouseDown = false;
+                }}
+            ></canvas>
+        </div>
+    </div>
+    <div class="absolute z-20 bottom-0">
+        <div class="bg-opacity-70 grid grid-cols-6">
+            <Button
+                class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
+                onmousedown={() => {
+                    intervalId = setInterval(zoomIn, 10);
+                }}
+                onmouseup={() => {
+                    clearInterval(intervalId);
+                }}
+                onmouseleave={() => {
+                    clearInterval(intervalId);
+                }}
+            >
+                <ZoomInOutline class="w-6 h-6 text-primary-400 " />
+            </Button>
+            <Button
+                class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
+                onmousedown={() => {
+                    intervalId = setInterval(zoomOut, 10);
+                }}
+                onmouseup={() => {
+                    clearInterval(intervalId);
+                }}
+                onmouseleave={() => {
+                    clearInterval(intervalId);
+                }}
+            >
+                <ZoomOutOutline class="w-6 h-6 text-primary-400 " />
+            </Button>
+            <Button
+                class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
+                onclick={() => {
+                    penOn = !penOn;
+                }}
+            >
+                {#if penOn}
+                    <PenSolid class="w-6 h-6 text-primary-400 " />
+                {:else}
+                    <PenOutline class="w-6 h-6 text-primary-400" />
+                {/if}
+            </Button>
+            <Button
+                class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
+                onmousedown={() => {
+                    intervalId = setInterval(() => {
+                        const drawing = drawings.pop();
+                        if (!drawing) {
+                            return;
+                        }
+                        undos.push(drawing);
+                        resizeCanvas(1);
+                    }, 10);
+                }}
+                onmouseup={() => {
+                    clearInterval(intervalId);
+                }}
+                onmouseleave={() => {
+                    clearInterval(intervalId);
+                }}
+            >
+                <UndoOutline class="w-6 h-6 text-primary-400" />
+            </Button>
+            <Button
+                class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
+                onmousedown={() => {
+                    intervalId = setInterval(() => {
+                        const drawing = undos.pop();
+                        if (!drawing) {
+                            return;
+                        }
+                        drawings.push(drawing);
+                        resizeCanvas(1);
+                    }, 10);
+                }}
+                onmouseup={() => {
+                    clearInterval(intervalId);
+                }}
+                onmouseleave={() => {
+                    clearInterval(intervalId);
+                }}
+            >
+                <RedoOutline class="w-6 h-6 text-primary-400" />
+            </Button>
+            <Button
+                class="bg-transparent focus-within:ring-0 hover:bg-primary-100 hover:opacity-70transparent"
+                onclick={() => {
+                    modal = true;
+                }}
+            >
+                <MessagesOutline class="w-6 h-6 text-primary-400"
+                ></MessagesOutline>
+            </Button>
+        </div>
+    </div>
 </div>
-
-<div class="overflow-auto h-full w-full">
-    <canvas
-        id="canvas"
-        class="cursor-crosshair active:cursor-pointer absolute"
-        onmousemove={(e) => {
-            positions.x = e.offsetX;
-            positions.y = e.offsetY;
-
-            if (mouseDown) {
-                if (penOn) {
-                    requestAnimationFrame(draw);
-                } else {
-                    requestAnimationFrame(move);
-                }
-            }
-        }}
-        onmousedown={() => {
-            mouseDown = true;
-            startPositions.x = positions.x;
-            startPositions.y = positions.y;
-        }}
-        onmouseup={() => {
-            mouseDown = false;
-        }}
-        onmouseleave={() => {
-            mouseDown = false;
-        }}
-    ></canvas>
-</div>
-
-<BottomNav
-    classInner="grid grid-cols-6 bg-white bg-opacity-70"
-    activeUrl="/"
-    id="bottom-nav"
-    classOuter="bg-transparent border-none"
->
-    <BottomNavItem
-        onmousedown={() => {
-            intervalId = setInterval(zoomIn, 10);
-        }}
-        onmouseup={() => {
-            clearInterval(intervalId);
-        }}
-        onmouseleave={() => {
-            clearInterval(intervalId);
-        }}
-    >
-        <ZoomInOutline class="w-6 h-6 text-primary-900 " />
-    </BottomNavItem>
-    <BottomNavItem
-        onmousedown={() => {
-            intervalId = setInterval(zoomOut, 10);
-        }}
-        onmouseup={() => {
-            clearInterval(intervalId);
-        }}
-    >
-        <ZoomOutOutline class="w-6 h-6 text-primary-900 " />
-    </BottomNavItem>
-    <BottomNavItem
-        onclick={() => {
-            penOn = !penOn;
-        }}
-    >
-        {#if penOn}
-            <PenSolid class="w-6 h-6 text-primary-900 " />
-        {:else}
-            <PenOutline class="w-6 h-6 text-primary-900" />
-        {/if}
-    </BottomNavItem>
-    <BottomNavItem
-        onmousedown={() => {
-            intervalId = setInterval(() => {
-                const drawing = drawings.pop();
-                if (!drawing) {
-                    return;
-                }
-                undos.push(drawing);
-                resizeCanvas(zoomAmount);
-            }, 10);
-        }}
-        onmouseup={() => {
-            clearInterval(intervalId);
-        }}
-        onmouseleave={() => {
-            clearInterval(intervalId);
-        }}
-    >
-        <UndoOutline class="w-6 h-6 text-primary-900" />
-    </BottomNavItem>
-    <BottomNavItem
-        onmousedown={() => {
-            intervalId = setInterval(() => {
-                const drawing = undos.pop();
-                if (!drawing) {
-                    return;
-                }
-                drawings.push(drawing);
-                resizeCanvas(zoomAmount);
-            }, 10);
-        }}
-        onmouseup={() => {
-            clearInterval(intervalId);
-        }}
-        onmouseleave={() => {
-            clearInterval(intervalId);
-        }}
-    >
-        <RedoOutline class="w-6 h-6 text-primary-900" />
-    </BottomNavItem>
-
-    <BottomNavItem
-        onclick={() => {
-            modal = true;
-        }}
-    >
-        <MessagesOutline class="w-6 h-6 text-primary-900"></MessagesOutline>
-    </BottomNavItem>
-</BottomNav>
