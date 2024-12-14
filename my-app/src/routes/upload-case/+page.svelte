@@ -8,7 +8,7 @@
 <Center>
     <Header></Header>
     <Squeeze>
-        <div class="flex flex-col h-full justify-center items-center">
+        <div class="flex flex-col h-full items-center mt-24">
             <Card class="shadow-lg shadow-primary-500">
                 <h1 class="mb-6">Upload Case</h1>
                 <div class="flex flex-col gap-6">

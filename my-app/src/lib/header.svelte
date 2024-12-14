@@ -9,16 +9,12 @@
     } from "flowbite-svelte";
     import { onDestroy } from "svelte";
 
-    let showLinks = $state(false);
+    let inside = $state(false);
     const sub = page.subscribe((value) => {
-        showLinks =
+        inside =
             value.route.id !== "/" &&
             value.route.id !== "/signup" &&
             value.route.id !== "/login";
-    });
-
-    $effect(() => {
-        console.log("isHome", showLinks);
     });
 
     onDestroy(sub);
@@ -28,15 +24,19 @@
     <NavBrand href="/">
         <span
             class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
-            >DR VR</span
+            >DR. VR</span
         >
     </NavBrand>
     <NavHamburger />
-    {#if showLinks}
-        <NavUl>
+
+    <NavUl>
+        {#if inside}
             <NavLi href="/">Home</NavLi>
             <NavLi href="/cases">Cases</NavLi>
             <NavLi href="/">Logout</NavLi>
-        </NavUl>
-    {/if}
+        {:else}
+            <NavLi href="/login">Login</NavLi>
+            <NavLi href="/signup">Sign up</NavLi>
+        {/if}
+    </NavUl>
 </Navbar>
